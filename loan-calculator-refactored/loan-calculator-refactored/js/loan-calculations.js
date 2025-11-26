@@ -4,13 +4,13 @@
  */
 
 // ============ UTILITY FUNCTIONS ============
-export function formatISK(num, showCurrency = true) {
+function formatISK(num, showCurrency = true) {
     const rounded = Math.round(num);
     const formatted = rounded.toLocaleString('is-IS');
     return showCurrency ? `${formatted} kr.` : formatted;
 }
 
-export function formatDate(date) {
+function formatDate(date) {
     const d = new Date(date);
     return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
 }
@@ -26,7 +26,7 @@ export function formatDate(date) {
  * @param {number} paymentFee - Monthly fee per payment
  * @returns {Object} Schedule and summary
  */
-export function calculateIndexedLoan(principal, annualRate, annualInflation, years, extraPayment = 0, paymentFee = 0) {
+function calculateIndexedLoan(principal, annualRate, annualInflation, years, extraPayment = 0, paymentFee = 0) {
     if (principal <= 0 || years <= 0) return null;
     
     const monthlyRate = annualRate / 12;
@@ -109,7 +109,7 @@ export function calculateIndexedLoan(principal, annualRate, annualInflation, yea
  * @param {number} paymentFee - Monthly fee per payment
  * @returns {Object} Schedule and summary
  */
-export function calculateStandardLoan(principal, annualRate, years, extraPayment = 0, paymentFee = 0) {
+function calculateStandardLoan(principal, annualRate, years, extraPayment = 0, paymentFee = 0) {
     if (principal <= 0 || years <= 0) return null;
     
     const monthlyRate = annualRate / 12;
@@ -177,7 +177,7 @@ export function calculateStandardLoan(principal, annualRate, years, extraPayment
  * @param {number} paymentFee - Monthly fee per payment
  * @returns {Object} Schedule and summary
  */
-export function calculateEqualPrincipalLoan(principal, annualRate, years, paymentFee = 0) {
+function calculateEqualPrincipalLoan(principal, annualRate, years, paymentFee = 0) {
     if (principal <= 0 || years <= 0) return null;
     
     const monthlyRate = annualRate / 12;
@@ -237,7 +237,7 @@ export function calculateEqualPrincipalLoan(principal, annualRate, years, paymen
  * @param {Object} params - Rental parameters
  * @returns {Object} Monthly and annual rental analysis
  */
-export function calculateRentalIncome(params) {
+function calculateRentalIncome(params) {
     const {
         monthlyRent,
         taxRate = 0.22,           // 22% capital gains tax in Iceland
@@ -280,7 +280,7 @@ export function calculateRentalIncome(params) {
  * @param {number} netRentalIncome - Net rental income (after tax/costs)
  * @returns {Object} Cashflow analysis
  */
-export function calculateCashflow(loanPayment, netRentalIncome = 0) {
+function calculateCashflow(loanPayment, netRentalIncome = 0) {
     const monthlyCashflow = netRentalIncome - loanPayment;
     
     return {
@@ -300,7 +300,7 @@ export function calculateCashflow(loanPayment, netRentalIncome = 0) {
  * @param {Object} params - Investment parameters
  * @returns {Object} Investment metrics
  */
-export function calculateInvestmentMetrics(params) {
+function calculateInvestmentMetrics(params) {
     const {
         propertyPrice,
         downPayment,
@@ -341,7 +341,7 @@ export function calculateInvestmentMetrics(params) {
  * @param {Object} params - Household parameters
  * @returns {number} Estimated annual benefit
  */
-export function estimateVaxtabaetur(params) {
+function estimateVaxtabaetur(params) {
     const {
         annualInterestPaid,
         annualIncome,

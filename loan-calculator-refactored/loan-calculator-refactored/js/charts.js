@@ -3,7 +3,7 @@
  * Handles all Chart.js visualizations
  */
 
-export class ChartManager {
+class ChartManager {
     constructor() {
         this.charts = {};
         this.isDark = false;

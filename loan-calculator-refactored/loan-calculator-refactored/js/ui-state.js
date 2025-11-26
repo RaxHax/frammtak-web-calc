@@ -3,7 +3,7 @@
  * Handles form inputs, state, and reactivity
  */
 
-export class UIState {
+class UIState {
     constructor() {
         this.state = {};
         this.listeners = new Map();
@@ -229,7 +229,7 @@ export class UIState {
  * Scenario Manager
  * Handles saving and loading loan scenarios
  */
-export class ScenarioManager {
+class ScenarioManager {
     constructor(storageKey = 'loanScenarios') {
         this.storageKey = storageKey;
         this.scenarios = this.load();
@@ -295,7 +295,7 @@ export class ScenarioManager {
 /**
  * Custom Costs Manager
  */
-export class CustomCostsManager {
+class CustomCostsManager {
     constructor(storageKey = 'customCosts') {
         this.storageKey = storageKey;
         this.costs = this.load();
