@@ -33,9 +33,11 @@ class LoanCalculatorApp {
 
     // ==================== DARK MODE ====================
     initDarkMode() {
-        const prefersDark = localStorage.getItem('darkMode') === 'true' ||
-            (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        
+        // Default to dark mode if no preference is stored
+        const darkModeStored = localStorage.getItem('darkMode');
+        const prefersDark = darkModeStored === 'true' ||
+            (darkModeStored === null && true); // Default to dark if no preference
+
         if (prefersDark) {
             document.documentElement.classList.add('dark');
         }
