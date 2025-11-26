@@ -3,7 +3,7 @@
  * Handles rental income calculations and cashflow analysis
  */
 
-export class RentalCalculator {
+class RentalCalculator {
     /**
      * Calculate detailed rental income breakdown
      * @param {Object} config - Rental configuration

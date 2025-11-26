@@ -33,13 +33,19 @@ class LoanCalculatorApp {
 
     // ==================== DARK MODE ====================
     initDarkMode() {
-        const prefersDark = localStorage.getItem('darkMode') === 'true' ||
-            (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        
+        const storedPreference = localStorage.getItem('darkMode');
+        const prefersDark = storedPreference === 'true' || storedPreference === null;
+
         if (prefersDark) {
             document.documentElement.classList.add('dark');
+            if (storedPreference === null) {
+                localStorage.setItem('darkMode', 'true');
+            }
+        } else {
+            document.documentElement.classList.remove('dark');
         }
-        this.chartManager.setDarkMode(prefersDark);
+
+        this.chartManager.setDarkMode(document.documentElement.classList.contains('dark'));
     }
 
     toggleDarkMode() {

@@ -3,7 +3,7 @@
  * Handles all loan amortization calculations for Icelandic mortgages
  */
 
-export class LoanCalculator {
+class LoanCalculator {
     /**
      * Calculate loan amortization schedule
      * @param {Object} config - Loan configuration

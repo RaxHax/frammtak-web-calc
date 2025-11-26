@@ -3,7 +3,7 @@
  * Common formatting and helper functions
  */
 
-export const Utils = {
+const Utils = {
     /**
      * Format number as Icelandic currency
      * @param {number} num - Number to format
