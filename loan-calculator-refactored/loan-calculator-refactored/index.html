@@ -7,6 +7,10 @@
     <meta name="description" content="Ítarlegur íbúðalánareiknir með leigutekjum, fjárfestingargreiningu og sjóðstreymisútreikningum.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -35,8 +39,54 @@
                         <svg id="sunIcon" class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
                         <svg id="moonIcon" class="w-5 h-5 dark:hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
                     </button>
+
+                    <!-- Save/Load Buttons (shown only when logged in) -->
+                    <button id="saveCalculationBtn" onclick="showSaveModal()" class="hidden px-3 py-2 text-sm rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow hover:shadow-md transition flex items-center gap-2 font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                        Vista í skýi
+                    </button>
+
+                    <button id="loadCalculationBtn" onclick="window.location.href='dashboard.html'" class="hidden px-3 py-2 text-sm rounded-lg bg-white dark:bg-slate-800 shadow hover:shadow-md transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Mínar útreikningar
+                    </button>
                 </div>
-                <div class="flex gap-2 no-print">
+                <div class="flex gap-2 no-print items-center">
+                    <!-- Auth Button (shown when logged out) -->
+                    <a id="authButton" href="auth.html" class="px-4 py-2 text-sm rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow hover:shadow-md transition flex items-center gap-2 font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                        Innskráning
+                    </a>
+
+                    <!-- User Menu (shown when logged in) -->
+                    <div id="userMenu" class="hidden relative">
+                        <button onclick="toggleUserMenu()" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 shadow hover:shadow-md transition">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                                U
+                            </div>
+                            <span id="userEmail" class="text-sm font-medium hidden md:block">user@example.com</span>
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-56 rounded-lg bg-white dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 z-50">
+                            <div class="p-3 border-b border-slate-200 dark:border-slate-700">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Skráður inn sem:</p>
+                                <p id="userEmailDropdown" class="text-sm font-medium truncate">user@example.com</p>
+                            </div>
+                            <div class="p-2">
+                                <a href="dashboard.html" class="block px-3 py-2 rounded text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                    Mínar útreikningar
+                                </a>
+                                <button onclick="handleSignOut()" class="w-full text-left px-3 py-2 rounded text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2 text-red-600 dark:text-red-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                    Útskrá
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <button id="exportCSV" class="px-3 py-2 text-sm rounded-lg bg-white dark:bg-slate-800 shadow hover:shadow-md transition flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         CSV
@@ -538,17 +588,215 @@
             </div>
         </div>
 
+        <!-- Save Calculation Modal -->
+        <div id="saveModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 no-print">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold">Vista útreikning</h3>
+                    <button onclick="closeSaveModal()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <form onsubmit="handleSaveCalculation(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Titill</label>
+                        <input
+                            type="text"
+                            id="saveTitle"
+                            required
+                            class="w-full px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 transition"
+                            placeholder="T.d. Íbúð í Reykjavík"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Lýsing (valkvæmt)</label>
+                        <textarea
+                            id="saveDescription"
+                            rows="3"
+                            class="w-full px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 transition"
+                            placeholder="Skammur lýsing á útreikningnum..."
+                        ></textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-4">
+                        <button
+                            type="button"
+                            onclick="closeSaveModal()"
+                            class="flex-1 px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition font-medium"
+                        >
+                            Hætta við
+                        </button>
+                        <button
+                            type="submit"
+                            class="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg transition font-medium"
+                        >
+                            Vista
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <footer class="mt-8 text-center text-sm text-slate-500 dark:text-slate-400 no-print">
             <p>Reiknivélin gefur áætlanir eingöngu og er ekki fjármálaráðgjöf.</p>
             <p class="mt-1">© 2025 Íbúðalánareiknir Pro+ - Endurbætt útgáfa</p>
         </footer>
     </div>
 
+    <!-- Supabase Integration -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+
+    <!-- Application Scripts -->
     <script src="js/utils.js"></script>
     <script src="js/loan-calculator.js"></script>
     <script src="js/rental-calculator.js"></script>
     <script src="js/ui-state.js"></script>
     <script src="js/charts.js"></script>
     <script src="js/app.js"></script>
+
+    <!-- Initialize Supabase -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize Supabase
+            initSupabase();
+            await supabaseService.init();
+
+            // Update UI based on auth state
+            updateAuthUI();
+
+            // Listen for auth changes
+            window.addEventListener('authStateChange', (event) => {
+                updateAuthUI();
+            });
+        });
+
+        function updateAuthUI() {
+            const user = supabaseService.getCurrentUser();
+            const authButton = document.getElementById('authButton');
+            const userMenu = document.getElementById('userMenu');
+            const saveBtn = document.getElementById('saveCalculationBtn');
+            const loadBtn = document.getElementById('loadCalculationBtn');
+
+            if (user) {
+                // User is logged in
+                authButton.classList.add('hidden');
+                userMenu.classList.remove('hidden');
+                if (saveBtn) saveBtn.classList.remove('hidden');
+                if (loadBtn) loadBtn.classList.remove('hidden');
+
+                // Update user email
+                const userEmail = document.getElementById('userEmail');
+                const userEmailDropdown = document.getElementById('userEmailDropdown');
+                if (userEmail) {
+                    userEmail.textContent = user.email;
+                }
+                if (userEmailDropdown) {
+                    userEmailDropdown.textContent = user.email;
+                }
+            } else {
+                // User is logged out
+                authButton.classList.remove('hidden');
+                userMenu.classList.add('hidden');
+                if (saveBtn) saveBtn.classList.add('hidden');
+                if (loadBtn) loadBtn.classList.add('hidden');
+            }
+        }
+
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userMenuDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (event) => {
+            const userMenu = document.getElementById('userMenu');
+            const dropdown = document.getElementById('userMenuDropdown');
+            if (userMenu && dropdown && !userMenu.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        async function handleSignOut() {
+            const result = await supabaseService.signOut();
+            if (result.success) {
+                showToast('Útskráð!', 'success');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-medium shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Save/Load Functions
+        function showSaveModal() {
+            const modal = document.getElementById('saveModal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeSaveModal() {
+            const modal = document.getElementById('saveModal');
+            modal.classList.add('hidden');
+            document.getElementById('saveTitle').value = '';
+            document.getElementById('saveDescription').value = '';
+        }
+
+        async function handleSaveCalculation(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('saveTitle').value;
+            const description = document.getElementById('saveDescription').value;
+
+            // Get current calculator state
+            const calculationData = getCurrentCalculationData();
+
+            // Save to Supabase
+            const result = await supabaseService.saveCalculation(
+                calculationData,
+                title,
+                description
+            );
+
+            if (result.success) {
+                showToast('Útreikningur vistaður!', 'success');
+                closeSaveModal();
+            } else {
+                showToast('Villa við að vista: ' + result.error, 'error');
+            }
+        }
+
+        function getCurrentCalculationData() {
+            // This function should collect all the current calculator input values
+            // You'll need to adapt this based on your existing app.js structure
+            return {
+                propertyPrice: parseFloat(document.getElementById('propertyPrice').value) || 0,
+                downPaymentPercent: parseFloat(document.getElementById('downPaymentPercent').value) || 0,
+                loanAmount: parseFloat(document.getElementById('loanAmount').value) || 0,
+                loanType: document.getElementById('loanType').value,
+                interestRate: parseFloat(document.getElementById('interestRate').value) || 0,
+                inflationRate: parseFloat(document.getElementById('inflationRate')?.value) || 0,
+                loanTermYears: parseFloat(document.getElementById('loanTerm').value) || 30,
+                loanFee: parseFloat(document.getElementById('loanFee').value) || 0,
+                paymentFee: parseFloat(document.getElementById('paymentFee').value) || 0,
+                // Add other fields as needed
+                timestamp: new Date().toISOString()
+            };
+        }
+    </script>
 </body>
 </html>

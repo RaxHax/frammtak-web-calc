@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="is" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Innskráning - Framtaksreiknir</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Glassmorphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Animated gradient background */
+        .gradient-bg {
+            background: linear-gradient(-45deg, #1e3a8a, #6366f1, #ec4899, #8b5cf6);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Button hover effect */
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-google {
+            background: white;
+            color: #1f2937;
+            transition: all 0.3s ease;
+        }
+
+        .btn-google:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Input focus effect */
+        input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Auth Container -->
+    <div class="glass rounded-3xl p-8 md:p-12 max-w-md w-full shadow-2xl">
+        <!-- Logo/Title -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">Framtaksreiknir</h1>
+            <p class="text-gray-300">Reiknaðu húsnæðislán með stíl</p>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div class="flex space-x-2 mb-8 bg-white/10 rounded-xl p-1">
+            <button onclick="showTab('signin')" id="signin-tab" class="flex-1 py-2 px-4 rounded-lg font-medium transition-all text-white bg-white/20">
+                Innskráning
+            </button>
+            <button onclick="showTab('signup')" id="signup-tab" class="flex-1 py-2 px-4 rounded-lg font-medium transition-all text-gray-300 hover:text-white">
+                Nýskráning
+            </button>
+        </div>
+
+        <!-- Sign In Form -->
+        <div id="signin-form" class="auth-form">
+            <form onsubmit="handleSignIn(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Netfang</label>
+                    <input
+                        type="email"
+                        id="signin-email"
+                        required
+                        class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 transition-all"
+                        placeholder="nafn@example.com"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Lykilorð</label>
+                    <input
+                        type="password"
+                        id="signin-password"
+                        required
+                        class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 transition-all"
+                        placeholder="••••••••"
+                    >
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full btn-primary py-3 rounded-xl font-semibold text-white"
+                >
+                    Skrá inn
+                </button>
+            </form>
+
+            <div class="mt-4 text-center">
+                <a href="#" onclick="showResetPassword()" class="text-sm text-gray-300 hover:text-white transition-colors">
+                    Gleymt lykilorð?
+                </a>
+            </div>
+        </div>
+
+        <!-- Sign Up Form -->
+        <div id="signup-form" class="auth-form hidden">
+            <form onsubmit="handleSignUp(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Netfang</label>
+                    <input
+                        type="email"
+                        id="signup-email"
+                        required
+                        class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 transition-all"
+                        placeholder="nafn@example.com"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Lykilorð</label>
+                    <input
+                        type="password"
+                        id="signup-password"
+                        required
+                        minlength="6"
+                        class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 transition-all"
+                        placeholder="Að minnsta kosti 6 stafir"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Staðfesta lykilorð</label>
+                    <input
+                        type="password"
+                        id="signup-password-confirm"
+                        required
+                        minlength="6"
+                        class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 transition-all"
+                        placeholder="Sláðu inn aftur"
+                    >
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full btn-primary py-3 rounded-xl font-semibold text-white"
+                >
+                    Búa til aðgang
+                </button>
+            </form>
+        </div>
+
+        <!-- Divider -->
+        <div class="flex items-center my-6">
+            <div class="flex-1 border-t border-white/20"></div>
+            <span class="px-4 text-sm text-gray-300">eða</span>
+            <div class="flex-1 border-t border-white/20"></div>
+        </div>
+
+        <!-- Google Sign In -->
+        <button
+            onclick="handleGoogleSignIn()"
+            class="w-full btn-google py-3 rounded-xl font-semibold flex items-center justify-center space-x-2"
+        >
+            <svg class="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span>Halda áfram með Google</span>
+        </button>
+
+        <!-- Back to Calculator -->
+        <div class="mt-6 text-center">
+            <a href="index.html" class="text-sm text-gray-300 hover:text-white transition-colors">
+                ← Til baka í reiknivél
+            </a>
+        </div>
+    </div>
+
+    <!-- Load Supabase Config & Client -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+
+    <!-- Auth Logic -->
+    <script>
+        // Initialize Supabase on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            initSupabase();
+            await supabaseService.init();
+
+            // Check if user is already logged in
+            if (supabaseService.isAuthenticated()) {
+                // Redirect to calculator
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Tab switching
+        function showTab(tab) {
+            const signinForm = document.getElementById('signin-form');
+            const signupForm = document.getElementById('signup-form');
+            const signinTab = document.getElementById('signin-tab');
+            const signupTab = document.getElementById('signup-tab');
+
+            if (tab === 'signin') {
+                signinForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+                signinTab.classList.add('bg-white/20', 'text-white');
+                signinTab.classList.remove('text-gray-300');
+                signupTab.classList.remove('bg-white/20', 'text-white');
+                signupTab.classList.add('text-gray-300');
+            } else {
+                signupForm.classList.remove('hidden');
+                signinForm.classList.add('hidden');
+                signupTab.classList.add('bg-white/20', 'text-white');
+                signupTab.classList.remove('text-gray-300');
+                signinTab.classList.remove('bg-white/20', 'text-white');
+                signinTab.classList.add('text-gray-300');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Handle sign in
+        async function handleSignIn(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('signin-email').value;
+            const password = document.getElementById('signin-password').value;
+
+            const result = await supabaseService.signIn(email, password);
+
+            if (result.success) {
+                showToast('Innskráning tókst!', 'success');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            } else {
+                showToast(result.error || 'Innskráning mistókst', 'error');
+            }
+        }
+
+        // Handle sign up
+        async function handleSignUp(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-password-confirm').value;
+
+            if (password !== confirmPassword) {
+                showToast('Lykilorð stemma ekki', 'error');
+                return;
+            }
+
+            const result = await supabaseService.signUp(email, password);
+
+            if (result.success) {
+                showToast('Aðgangur búinn til! Athugaðu netfangið þitt.', 'success');
+                setTimeout(() => {
+                    showTab('signin');
+                }, 2000);
+            } else {
+                showToast(result.error || 'Nýskráning mistókst', 'error');
+            }
+        }
+
+        // Handle Google sign in
+        async function handleGoogleSignIn() {
+            const result = await supabaseService.signInWithGoogle();
+
+            if (!result.success) {
+                showToast(result.error || 'Google innskráning mistókst', 'error');
+            }
+            // If successful, user will be redirected by OAuth flow
+        }
+
+        // Show reset password (placeholder)
+        function showResetPassword() {
+            const email = prompt('Sláðu inn netfangið þitt:');
+            if (email) {
+                supabaseService.resetPassword(email).then(result => {
+                    if (result.success) {
+                        showToast('Tölvupóstur sendur!', 'success');
+                    } else {
+                        showToast(result.error || 'Mistókst', 'error');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
