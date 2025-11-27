@@ -809,7 +809,7 @@ class LoanCalculatorApp {
         const tbody = Utils.getEl('detailed-table-body');
 
         if (!tbody || !data?.schedule) {
-            if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="p-4 text-center text-slate-500">Engin gögn</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="13" class="p-4 text-center text-slate-500">Engin gögn</td></tr>';
             return;
         }
 
@@ -818,16 +818,17 @@ class LoanCalculatorApp {
             : data.schedule.slice(0, parseInt(displayCount));
 
         let html = '';
-        rowsToShow.forEach(row => {
-            const isEvenYear = Math.floor((row.month - 1) / 12) % 2 === 0;
+        rowsToShow.forEach((row, index) => {
+            const isEvenRow = index % 2 === 0;
             html += `
-                <tr class="${isEvenYear ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-750'}">
+                <tr class="${isEvenRow ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-700'}">
                     <td class="p-2.5 font-medium">${row.month}</td>
                     <td class="p-2.5 text-slate-600 dark:text-slate-400">${Utils.formatDate(row.date)}</td>
                     <td class="p-2.5 text-right">${Utils.formatISK(row.inflation, false)}</td>
                     <td class="p-2.5 text-right text-blue-600 dark:text-blue-400">${Utils.formatISK(row.principal, false)}</td>
                     <td class="p-2.5 text-right text-red-600 dark:text-red-400">${Utils.formatISK(row.interest, false)}</td>
                     <td class="p-2.5 text-right">${Utils.formatISK(row.fee, false)}</td>
+                    <td class="p-2.5 text-right font-medium text-slate-700 dark:text-slate-200">${Utils.formatISK(row.requiredPayment, false)}</td>
                     <td class="p-2.5 text-right text-emerald-600 dark:text-emerald-400">${Utils.formatISK(row.manualExtra, false)}</td>
                     <td class="p-2.5 text-right text-green-600 dark:text-green-400">${Utils.formatISK(row.rentalContribution, false)}</td>
                     <td class="p-2.5 text-right text-teal-600 dark:text-teal-400">${Utils.formatISK(row.rentBasedExtra, false)}</td>
@@ -841,7 +842,7 @@ class LoanCalculatorApp {
         if (displayCount !== 'all' && data.schedule.length > parseInt(displayCount)) {
             html += `
                 <tr class="bg-slate-50 dark:bg-slate-700">
-                    <td colspan="12" class="p-3 text-center text-sm text-slate-500 dark:text-slate-400">
+                    <td colspan="13" class="p-3 text-center text-sm text-slate-500 dark:text-slate-400">
                         ... og ${data.schedule.length - parseInt(displayCount)} línur í viðbót
                     </td>
                 </tr>
