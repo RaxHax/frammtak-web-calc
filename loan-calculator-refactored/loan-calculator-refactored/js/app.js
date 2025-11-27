@@ -503,7 +503,10 @@ class LoanCalculatorApp {
         if (!container || !standard || !accelerated) return;
 
         const savedMonths = standard.summary.termMonths - accelerated.summary.termMonths;
-        const savedMoney = standard.summary.totalPaidToLoan - accelerated.summary.totalPaidToLoan;
+        const savedMoneyMetric = (params.rentalEnabled && params.applyRentToLoan)
+            ? 'totalPaidByUser'
+            : 'totalPaidToLoan';
+        const savedMoney = standard.summary[savedMoneyMetric] - accelerated.summary[savedMoneyMetric];
 
         if (savedMonths > 0 || savedMoney > 0) {
             let source = 'flýtiáætlun';
@@ -605,7 +608,7 @@ class LoanCalculatorApp {
                 breakEvenInfo.className = 'p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-700';
             }
         } else {
-            outOfPocket = baseLoanPayment;
+            outOfPocket = baseLoanPayment - netRent;
             annualCashflow = (netRent - baseLoanPayment) * 12;
 
             if (netRent > baseLoanPayment) {
@@ -632,7 +635,13 @@ class LoanCalculatorApp {
 
     updateInvestmentDashboard(params) {
         const standard = this.scheduleData.standard;
-        const activeSchedule = (params.rentalEnabled && params.applyRentToLoan)
+        const useAccelerated = (
+            (params.rentalEnabled && params.applyRentToLoan) ||
+            params.extraPayment > 0 ||
+            params.fixedPayment > 0
+        );
+
+        const activeSchedule = useAccelerated
             ? this.scheduleData.accelerated
             : standard;
 
