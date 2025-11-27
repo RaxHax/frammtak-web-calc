@@ -21,7 +21,8 @@ class LoanCalculator {
             indexExtraPayment = false,
             fixedPayment = 0,
             rentalIncome = null, // Optional: { grossRent, taxRate, vacancyRate, operatingCosts, indexed, applyToLoan }
-            startDate = new Date()
+            startDate = new Date(),
+            acceleratedPayoff = false // If true, keep legacy behavior where extras shorten the term
         } = config;
 
         if (loanAmount <= 0) return null;
@@ -72,8 +73,9 @@ class LoanCalculator {
         let month = 0;
         let cumulativeInflationFactor = 1;
 
-        while (balance > 0.01 && month < 600) { // Max 50 years safety
+        while ((acceleratedPayoff ? balance > 0.01 : month < totalMonths) && month < 600) { // Max 50 years safety
             month++;
+            const remainingMonths = Math.max(1, totalMonths - month + 1);
 
             // Step 1: Apply inflation to balance (for indexed loans)
             // This happens at the start of the period
@@ -88,14 +90,37 @@ class LoanCalculator {
             // Step 3: Determine the required payment
             let requiredPayment;
             if (isEqualPrincipal) {
-                // For equal principal: original principal portion + current interest
-                requiredPayment = (loanAmount / totalMonths) + interest;
+                if (acceleratedPayoff) {
+                    // Legacy: original principal portion + current interest
+                    requiredPayment = (loanAmount / totalMonths) + interest;
+                } else {
+                    const remainingPrincipalPortion = balanceAfterInflation / remainingMonths;
+                    requiredPayment = remainingPrincipalPortion + interest;
+                }
             } else if (isIndexed) {
-                // For indexed annuity: base payment grows with cumulative inflation
-                requiredPayment = basePayment * cumulativeInflationFactor;
+                if (acceleratedPayoff) {
+                    // Legacy: base payment grows with cumulative inflation
+                    requiredPayment = basePayment * cumulativeInflationFactor;
+                } else {
+                    const realBalance = balanceAfterInflation / cumulativeInflationFactor;
+                    const remainingRealPayment = LoanCalculator.calculateAnnuityPayment(
+                        realBalance,
+                        monthlyInterestRate,
+                        remainingMonths
+                    );
+                    requiredPayment = remainingRealPayment * cumulativeInflationFactor;
+                }
             } else {
-                // For non-indexed annuity: fixed payment
-                requiredPayment = basePayment;
+                if (acceleratedPayoff) {
+                    // Legacy: fixed payment
+                    requiredPayment = basePayment;
+                } else {
+                    requiredPayment = LoanCalculator.calculateAnnuityPayment(
+                        balanceAfterInflation,
+                        monthlyInterestRate,
+                        remainingMonths
+                    );
+                }
             }
 
             // Step 4: Calculate extra payments (user's manual extra)
@@ -364,6 +389,16 @@ class LoanCalculator {
         return years;
     }
 }
+
+LoanCalculator.calculateAnnuityPayment = function(principal, monthlyRate, months) {
+    if (principal <= 0) return 0;
+    if (monthlyRate === 0) {
+        return principal / months;
+    }
+
+    const factor = Math.pow(1 + monthlyRate, months);
+    return principal * (monthlyRate * factor) / (factor - 1);
+};
 
 // Export for use in browser without module system
 if (typeof window !== 'undefined') {
