@@ -113,6 +113,7 @@ class LoanCalculatorApp {
             { slider: 'extraPaymentSlider', input: 'extraPayment' },
             { slider: 'fixedPaymentSlider', input: 'fixedPayment' },
             { slider: 'monthlyRentSlider', input: 'monthlyRent' },
+            { slider: 'rentalDurationSlider', input: 'rentalDurationYears' },
             { slider: 'appreciationSlider', input: 'appreciationRate' },
             { slider: 'holdingPeriodSlider', input: 'holdingPeriod' }
         ];
@@ -279,17 +280,28 @@ class LoanCalculatorApp {
     // ==================== GET PARAMETERS ====================
     getParams() {
         const customCostTotal = this.customCostsManager.getTotal();
-        
+
+        const numberOrDefault = (value, defaultValue = 0) => {
+            const parsed = parseFloat(value);
+            return Number.isNaN(parsed) ? defaultValue : parsed;
+        };
+
+        const parsedLoanTerm = parseInt(Utils.getEl('loanTerm')?.value, 10);
+        const loanTermYears = Number.isNaN(parsedLoanTerm) ? 30 : parsedLoanTerm;
+
+        const rentalDurationYears = numberOrDefault(Utils.getEl('rentalDurationYears')?.value, loanTermYears);
+        const rentalDurationMonths = rentalDurationYears > 0 ? rentalDurationYears * 12 : loanTermYears * 12;
+
         return {
             loanType: Utils.getEl('loanType')?.value || 'indexedAnnuity',
-            propertyPrice: parseFloat(Utils.getEl('propertyPrice')?.value) || 0,
+            propertyPrice: numberOrDefault(Utils.getEl('propertyPrice')?.value),
             loanAmount: parseFloat(Utils.getEl('loanAmount')?.value) || 0,
             downPaymentPercent: parseFloat(Utils.getEl('downPaymentPercent')?.value) || 0,
             loanFee: parseFloat(Utils.getEl('loanFee')?.value) || 0,
             monthlyFee: parseFloat(Utils.getEl('paymentFee')?.value) || 0,
             annualInterestRate: (parseFloat(Utils.getEl('interestRate')?.value) || 0) / 100,
             annualInflationRate: (parseFloat(Utils.getEl('inflationRate')?.value) || 0) / 100,
-            loanTermYears: parseInt(Utils.getEl('loanTerm')?.value) || 30,
+            loanTermYears,
             extraPayment: parseFloat(Utils.getEl('extraPayment')?.value) || 0,
             indexExtraPayment: Utils.getEl('indexExtraPayment')?.checked || false,
             fixedPayment: parseFloat(Utils.getEl('fixedPayment')?.value) || 0,
@@ -297,25 +309,22 @@ class LoanCalculatorApp {
             // Rental
             rentalEnabled: Utils.getEl('enableRental')?.checked || false,
             applyRentToLoan: Utils.getEl('applyRentToLoan')?.checked || false,
-            grossRent: parseFloat(Utils.getEl('monthlyRent')?.value) || 0,
+            grossRent: numberOrDefault(Utils.getEl('monthlyRent')?.value),
             indexRent: Utils.getEl('indexRent')?.checked !== false,
-            taxRate: (parseFloat(Utils.getEl('incomeTaxRate')?.value) || 22) / 100,
-            propertyTax: parseFloat(Utils.getEl('propertyTax')?.value) || 0,
-            insurance: parseFloat(Utils.getEl('insurance')?.value) || 0,
-            maintenance: parseFloat(Utils.getEl('maintenance')?.value) || 0,
-            hoaFees: parseFloat(Utils.getEl('hoaFees')?.value) || 0,
+            taxRate: numberOrDefault(Utils.getEl('incomeTaxRate')?.value, 11) / 100,
+            propertyTax: numberOrDefault(Utils.getEl('propertyTax')?.value),
+            insurance: numberOrDefault(Utils.getEl('insurance')?.value),
+            maintenance: numberOrDefault(Utils.getEl('maintenance')?.value),
+            hoaFees: numberOrDefault(Utils.getEl('hoaFees')?.value),
             customCosts: customCostTotal,
-            vacancyRate: (parseFloat(Utils.getEl('vacancyRate')?.value) || 5) / 100,
+            vacancyRate: numberOrDefault(Utils.getEl('vacancyRate')?.value, 5) / 100,
+            rentalDurationYears,
+            rentalDurationMonths,
 
             // Investment
             appreciationRate: (parseFloat(Utils.getEl('appreciationRate')?.value) || 3.5) / 100,
             holdingPeriod: parseInt(Utils.getEl('holdingPeriod')?.value) || 10,
-            sellingCostRate: (parseFloat(Utils.getEl('sellingCosts')?.value) || 2.5) / 100,
-
-            // Benefits
-            annualIncome: parseFloat(Utils.getEl('annualIncome')?.value) || 0,
-            householdType: Utils.getEl('householdType')?.value || 'couple',
-            numChildren: parseInt(Utils.getEl('numChildren')?.value) || 0
+            sellingCostRate: numberOrDefault(Utils.getEl('sellingCosts')?.value, 2.5) / 100
         };
     }
 
@@ -336,7 +345,8 @@ class LoanCalculatorApp {
             operatingCosts: params.propertyTax + params.insurance + params.maintenance + params.hoaFees + params.customCosts,
             indexed: params.indexRent,
             indexCosts: params.indexRent, // Costs also indexed when rent is indexed
-            applyToLoan: params.applyRentToLoan
+            applyToLoan: params.applyRentToLoan,
+            rentalDurationMonths: params.rentalDurationMonths
         } : null;
 
         // Calculate standard schedule (no extras, no rental)
@@ -383,7 +393,6 @@ class LoanCalculatorApp {
         this.updateCharts();
         this.renderDetailedTable();
         this.updateInvestmentDashboard(params);
-        this.updateVaxtabaetur(params);
 
         if (params.rentalEnabled) {
             this.updateCashflowSection(params);
@@ -542,6 +551,10 @@ class LoanCalculatorApp {
             operatingCosts
         });
 
+        const rentalPeriodText = params.rentalDurationYears > 0
+            ? `${params.rentalDurationYears} ár`
+            : 'allan lánstímann';
+
         const baseLoanPayment = standard.summary.firstPayment;
         const taxAmount = params.grossRent * params.taxRate;
         const vacancyLoss = params.grossRent * params.vacancyRate;
@@ -569,6 +582,7 @@ class LoanCalculatorApp {
                             <p class="text-sm text-green-600 dark:text-green-500">
                                 ${Utils.formatISK(extra)} í viðbót fer á höfuðstól í hverjum mánuði.
                             </p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Forsendur miðað við leigu í ${rentalPeriodText}.</p>
                         </div>
                     </div>
                 `;
@@ -584,6 +598,7 @@ class LoanCalculatorApp {
                             <p class="text-sm text-amber-600 dark:text-amber-500">
                                 Þú þarft að leggja til ${Utils.formatISK(outOfPocket)} á mánuði.
                             </p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Forsendur miðað við leigu í ${rentalPeriodText}.</p>
                         </div>
                     </div>
                 `;
@@ -592,16 +607,16 @@ class LoanCalculatorApp {
         } else {
             outOfPocket = baseLoanPayment;
             annualCashflow = (netRent - baseLoanPayment) * 12;
-            
+
             if (netRent > baseLoanPayment) {
                 breakEvenInfo.innerHTML = `<p class="text-sm text-green-700 dark:text-green-400">
                     <span class="font-bold">Jákvætt sjóðstreymi!</span> Leigan er hærri en lánakostnaður.
-                </p>`;
+                </p><p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Forsendur miðað við leigu í ${rentalPeriodText}.</p>`;
                 breakEvenInfo.className = 'p-4 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-700';
             } else {
                 breakEvenInfo.innerHTML = `<p class="text-sm text-amber-700 dark:text-amber-400">
                     Lánakostnaður er hærri en leigutekjur um ${Utils.formatISK(baseLoanPayment - netRent)} á mánuði.
-                </p>`;
+                </p><p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Forsendur miðað við leigu í ${rentalPeriodText}.</p>`;
                 breakEvenInfo.className = 'p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-700';
             }
         }
@@ -732,33 +747,6 @@ class LoanCalculatorApp {
         `;
     }
 
-    updateVaxtabaetur(params) {
-        const standard = this.scheduleData.standard;
-        const display = Utils.getEl('vaxtabaetur');
-        if (!display || !standard?.summary) {
-            if (display) display.textContent = '-';
-            return;
-        }
-
-        const annualInterest = standard.summary.totalInterest / (standard.summary.termMonths / 12);
-        const { annualIncome, householdType, numChildren } = params;
-
-        let incomeThreshold = householdType === 'single' ? 5500000 : 8000000;
-        incomeThreshold += numChildren * 500000;
-
-        let maxBenefit = householdType === 'single' ? 500000 : 600000;
-        maxBenefit += numChildren * 50000;
-
-        let benefit = Math.min(annualInterest * 0.30, maxBenefit);
-
-        if (annualIncome > incomeThreshold) {
-            const reduction = (annualIncome - incomeThreshold) * 0.04;
-            benefit = Math.max(0, benefit - reduction);
-        }
-
-        display.textContent = benefit > 0 ? Utils.formatISK(benefit) : 'Engar bætur áætlaðar';
-    }
-
     // ==================== CHARTS ====================
     updateCharts() {
         const { standard, accelerated, nonIndexed } = this.scheduleData;
@@ -798,7 +786,8 @@ class LoanCalculatorApp {
                 vacancyRate: params.vacancyRate,
                 operatingCosts: params.propertyTax + params.insurance + params.maintenance + params.hoaFees + params.customCosts,
                 indexed: params.indexRent,
-                annualInflationRate: params.annualInflationRate
+                annualInflationRate: params.annualInflationRate,
+                rentalDurationMonths: params.rentalDurationMonths
             }, params.applyRentToLoan);
         }
     }
@@ -811,7 +800,7 @@ class LoanCalculatorApp {
         const tbody = Utils.getEl('detailed-table-body');
 
         if (!tbody || !data?.schedule) {
-            if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Engin gögn</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="p-4 text-center text-slate-500">Engin gögn</td></tr>';
             return;
         }
 
@@ -830,6 +819,10 @@ class LoanCalculatorApp {
                     <td class="p-2.5 text-right text-blue-600 dark:text-blue-400">${Utils.formatISK(row.principal, false)}</td>
                     <td class="p-2.5 text-right text-red-600 dark:text-red-400">${Utils.formatISK(row.interest, false)}</td>
                     <td class="p-2.5 text-right">${Utils.formatISK(row.fee, false)}</td>
+                    <td class="p-2.5 text-right text-emerald-600 dark:text-emerald-400">${Utils.formatISK(row.manualExtra, false)}</td>
+                    <td class="p-2.5 text-right text-green-600 dark:text-green-400">${Utils.formatISK(row.rentalContribution, false)}</td>
+                    <td class="p-2.5 text-right text-teal-600 dark:text-teal-400">${Utils.formatISK(row.rentBasedExtra, false)}</td>
+                    <td class="p-2.5 text-right font-medium">${Utils.formatISK(row.userOutOfPocket, false)}</td>
                     <td class="p-2.5 text-right font-medium">${Utils.formatISK(row.totalPaymentToLoan, false)}</td>
                     <td class="p-2.5 text-right font-bold">${Utils.formatISK(row.balance, false)}</td>
                 </tr>
@@ -839,7 +832,7 @@ class LoanCalculatorApp {
         if (displayCount !== 'all' && data.schedule.length > parseInt(displayCount)) {
             html += `
                 <tr class="bg-slate-50 dark:bg-slate-700">
-                    <td colspan="8" class="p-3 text-center text-sm text-slate-500 dark:text-slate-400">
+                    <td colspan="12" class="p-3 text-center text-sm text-slate-500 dark:text-slate-400">
                         ... og ${data.schedule.length - parseInt(displayCount)} línur í viðbót
                     </td>
                 </tr>
@@ -1005,16 +998,15 @@ class LoanCalculatorApp {
         this.setInputValue('maintenance', p.maintenance);
         this.setInputValue('hoaFees', p.hoaFees);
         this.setInputValue('vacancyRate', p.vacancyRate * 100);
+        this.setInputValue('rentalDurationYears', p.rentalDurationYears);
+        const rentalDurationSlider = Utils.getEl('rentalDurationSlider');
+        if (rentalDurationSlider) rentalDurationSlider.value = p.rentalDurationYears;
 
         this.setInputValue('appreciationRate', p.appreciationRate * 100);
         Utils.getEl('appreciationSlider').value = p.appreciationRate * 100;
         this.setInputValue('holdingPeriod', p.holdingPeriod);
         Utils.getEl('holdingPeriodSlider').value = p.holdingPeriod;
         this.setInputValue('sellingCosts', p.sellingCostRate * 100);
-
-        this.setInputValue('annualIncome', p.annualIncome);
-        this.setInputValue('householdType', p.householdType);
-        this.setInputValue('numChildren', p.numChildren);
 
         // Trigger updates
         Utils.getEl('enableRental').dispatchEvent(new Event('change'));

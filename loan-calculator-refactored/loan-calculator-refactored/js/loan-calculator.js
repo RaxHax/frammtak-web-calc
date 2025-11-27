@@ -62,6 +62,7 @@ class LoanCalculator {
         let totalPaidToLoan = 0; // Total going toward loan (including rent)
         let totalFees = 0;
         let totalRentalContribution = 0;
+        const rentalDurationMonths = rentalIncome?.rentalDurationMonths ?? Infinity;
 
         // Setup start date
         const paymentStartDate = new Date(startDate);
@@ -117,9 +118,11 @@ class LoanCalculator {
             let rentBasedExtra = 0;
             let userOutOfPocket = paymentBeforeRental + manualExtra;
 
-            if (rentalIncome && rentalIncome.applyToLoan) {
+            const rentalActive = rentalIncome && month <= rentalDurationMonths;
+
+            if (rentalActive && rentalIncome.applyToLoan) {
                 const netRent = this.calculateNetRent(rentalIncome, cumulativeInflationFactor);
-                
+
                 if (netRent >= paymentBeforeRental) {
                     // Rent covers the required payment
                     rentalContribution = paymentBeforeRental;
@@ -208,7 +211,7 @@ class LoanCalculator {
     static calculateNetRent(rental, inflationFactor = 1) {
         const {
             grossRent,
-            taxRate = 0.22,
+            taxRate = 0.11,
             vacancyRate = 0.05,
             operatingCosts = 0,
             indexed = true,

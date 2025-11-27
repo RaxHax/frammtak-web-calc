@@ -240,7 +240,7 @@ function calculateEqualPrincipalLoan(principal, annualRate, years, paymentFee = 
 function calculateRentalIncome(params) {
     const {
         monthlyRent,
-        taxRate = 0.22,           // 22% capital gains tax in Iceland
+        taxRate = 0.11,           // 11% fjármagnstekjuskattur
         vacancyRate = 0.05,       // 5% assumed vacancy
         propertyTax = 0,
         insurance = 0,

@@ -12,7 +12,7 @@ class RentalCalculator {
     static calculateMonthlyBreakdown(config) {
         const {
             grossRent,
-            taxRate = 0.22,
+            taxRate = 0.11,
             vacancyRate = 0.05,
             propertyTax = 0,
             insurance = 0,
@@ -114,7 +114,7 @@ class RentalCalculator {
     static calculateBreakEvenRent(config) {
         const {
             loanPayment,
-            taxRate = 0.22,
+            taxRate = 0.11,
             vacancyRate = 0.05,
             operatingCosts = 0
         } = config;
