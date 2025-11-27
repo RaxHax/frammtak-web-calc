@@ -321,6 +321,8 @@ class ChartManager {
         const years = Math.min(Math.ceil(schedule.schedule.length / 12), 30);
         const labels = Array.from({ length: years }, (_, i) => `Ár ${i + 1}`);
 
+        const rentalDurationMonths = rentalConfig?.rentalDurationMonths ?? Infinity;
+
         const rentalIncomes = [];
         const mortgagePayments = [];
         const netCashflows = [];
@@ -336,10 +338,15 @@ class ChartManager {
             const grossRent = rentalConfig.indexed 
                 ? rentalConfig.grossRent * inflationFactor 
                 : rentalConfig.grossRent;
-            const taxAmount = grossRent * (rentalConfig.taxRate || 0.22);
+            const taxAmount = grossRent * (rentalConfig.taxRate || 0.11);
             const vacancyLoss = grossRent * (rentalConfig.vacancyRate || 0.05);
             const operatingCosts = rentalConfig.operatingCosts * (rentalConfig.indexed ? inflationFactor : 1);
-            const netRent = (grossRent - taxAmount - vacancyLoss - operatingCosts) * 12;
+            const monthlyNetRent = grossRent - taxAmount - vacancyLoss - operatingCosts;
+
+            const activeMonths = !isFinite(rentalDurationMonths)
+                ? 12
+                : Math.max(0, Math.min(12, rentalDurationMonths - year * 12));
+            const netRent = monthlyNetRent * activeMonths;
 
             const annualMortgage = scheduleRow.totalPaymentToLoan * 12;
 
